@@ -36,22 +36,25 @@ def load_config():
     return config
 
 def backup_files(source, target, compress):
-    now = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
-    target_path = os.path.join(target, now)
-    os.makedirs(target_path, exist_ok=True)
-    if compress:
-        shutil.make_archive(target_path, 'zip', source)
-    else:
-        shutil.copytree(source, target_path, dirs_exist_ok=True)
+    today = datetime.now().strftime("%Y-%m-%d")
+    target_path = os.path.join(target, today)
+    if not os.path.exists(target_path):
+        os.makedirs(target_path, exist_ok=True)
+    
+    # 將文件存儲在以日期命名的目錄中
+    for item in os.listdir(source):
+        s_item = os.path.join(source, item)
+        d_item = os.path.join(target_path, item)
+        if os.path.isdir(s_item):
+            shutil.copytree(s_item, d_item, dirs_exist_ok=True)
+        else:
+            shutil.copy2(s_item, d_item)
 
 def clean_old_backups(target, backup_count):
-    backups = sorted([os.path.join(target, d) for d in os.listdir(target)], key=os.path.getmtime)
-    while len(backups) > backup_count:
-        old_backup = backups.pop(0)
-        if os.path.isdir(old_backup):
-            shutil.rmtree(old_backup)
-        else:
-            os.remove(old_backup)
+    all_backups = sorted([os.path.join(target, d) for d in os.listdir(target) if os.path.isdir(os.path.join(target, d))], key=os.path.getmtime)
+    while len(all_backups) > backup_count:
+        old_backup = all_backups.pop(0)
+        shutil.rmtree(old_backup)
 
 def scheduled_backup():
     config = load_config()
