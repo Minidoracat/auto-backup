@@ -40,17 +40,19 @@ def load_config():
 def backup_files(source, target, compress, compress_format):
     today = datetime.now().strftime("%Y-%m-%d")
     target_path = os.path.join(target, today)
-    
+    os.makedirs(target_path, exist_ok=True)  # 確保當天的資料夾存在
+
     if compress:
-        archive_name = os.path.join(target, f"{today}")
+        # 壓縮時，將檔案放在當天日期的資料夾內
+        archive_name = os.path.join(target_path, f"backup-{today}")  # 修改壓縮檔名稱，避免路徑問題
         if compress_format == "zip":
             shutil.make_archive(archive_name, 'zip', source)
         elif compress_format == "tar.gz":
             with tarfile.open(f"{archive_name}.tar.gz", "w:gz") as tar:
-                tar.add(source, arcname=os.path.basename(source))
+                for item in os.listdir(source):
+                    tar.add(os.path.join(source, item), arcname=item)
     else:
-        if not os.path.exists(target_path):
-            os.makedirs(target_path, exist_ok=True)
+        # 如果不壓縮，則直接將檔案複製到當天日期的資料夾內
         for item in os.listdir(source):
             s_item = os.path.join(source, item)
             d_item = os.path.join(target_path, item)
@@ -58,6 +60,7 @@ def backup_files(source, target, compress, compress_format):
                 shutil.copytree(s_item, d_item, dirs_exist_ok=True)
             else:
                 shutil.copy2(s_item, d_item)
+
 
 def clean_old_backups(target, backup_count):
     all_backups = sorted([os.path.join(target, d) for d in os.listdir(target) if os.path.isdir(os.path.join(target, d))], key=os.path.getmtime)
