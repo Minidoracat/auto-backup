@@ -38,13 +38,15 @@ def load_config():
     return config
 
 def backup_files(source, target, compress, compress_format):
-    today = datetime.now().strftime("%Y-%m-%d")
-    target_path = os.path.join(target, today)
-    os.makedirs(target_path, exist_ok=True)  # 確保當天的資料夾存在
+    now = datetime.now()
+    date_stamp = now.strftime("%Y-%m-%d")
+    time_stamp = now.strftime("%H-%M")
+    target_date_path = os.path.join(target, date_stamp)
+    os.makedirs(target_date_path, exist_ok=True)  # 確保當天的資料夾存在
 
     if compress:
-        # 壓縮時，將檔案放在當天日期的資料夾內
-        archive_name = os.path.join(target_path, f"backup-{today}")  # 修改壓縮檔名稱，避免路徑問題
+        # 壓縮時，將檔案放在當天日期的資料夾內，檔名包含時間戳
+        archive_name = os.path.join(target_date_path, f"backup-{date_stamp}-{time_stamp}")  # 加入時間戳
         if compress_format == "zip":
             shutil.make_archive(archive_name, 'zip', source)
         elif compress_format == "tar.gz":
@@ -52,10 +54,12 @@ def backup_files(source, target, compress, compress_format):
                 for item in os.listdir(source):
                     tar.add(os.path.join(source, item), arcname=item)
     else:
-        # 如果不壓縮，則直接將檔案複製到當天日期的資料夾內
+        # 如果不壓縮，創建一個以時間戳命名的資料夾來存放備份
+        target_time_path = os.path.join(target_date_path, time_stamp)
+        os.makedirs(target_time_path, exist_ok=True)
         for item in os.listdir(source):
             s_item = os.path.join(source, item)
-            d_item = os.path.join(target_path, item)
+            d_item = os.path.join(target_time_path, item)
             if os.path.isdir(s_item):
                 shutil.copytree(s_item, d_item, dirs_exist_ok=True)
             else:
