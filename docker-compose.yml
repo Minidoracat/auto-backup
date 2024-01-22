@@ -5,11 +5,10 @@ services:
     # build: .
     image: minidoracat/auto-backup:latest
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
       - /path/to/source:/app/source
       - /path/to/backup:/app/backup
     environment:
+      - TZ=Asia/Taipei # 時區
       - SOURCE_DIRECTORY=/app/source
       - TARGET_DIRECTORY=/app/backup
       - BACKUP_COUNT=5  # 備份數量(天數)
