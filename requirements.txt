@@ -1,2 +1,2 @@
 PyYAML>=5.4
-schedule
+apscheduler==3.7.0
