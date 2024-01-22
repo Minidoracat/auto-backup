@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  backup_service:
+    build: .
+    environment:
+      - SOURCE_DIRECTORY=/path/to/source
+      - TARGET_DIRECTORY=/path/to/backup
+      - BACKUP_COUNT=5
+      - BACKUP_FREQUENCY_HOURS=1
+      - COMPRESS=true
+    volumes:
+      - /path/to/source:/path/to/source
+      - /path/to/backup:/path/to/backup
