@@ -67,7 +67,7 @@ def clean_old_backups(target, backup_count):
 
 def scheduled_backup():
     config = load_config()
-    backup_files(config['source_directory'], config['target_directory'], config['compress'])
+    backup_files(config['source_directory'], config['target_directory'], config['compress'], config['compress_format'])
     clean_old_backups(config['target_directory'], config['backup_count'])
 
 def main():
