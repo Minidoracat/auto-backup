@@ -5,6 +5,8 @@ services:
     # build: .
     image: minidoracat/auto-backup:latest
     volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - /path/to/source:/app/source
       - /path/to/backup:/app/backup
     environment:
