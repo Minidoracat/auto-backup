@@ -46,7 +46,7 @@ def backup_files(source, target, compress, compress_format):
 
     if compress:
         # 壓縮時，將檔案放在當天日期的資料夾內，檔名包含時間戳
-        archive_name = os.path.join(target_date_path, f"backup-{date_stamp}-{time_stamp}")  # 加入時間戳
+        archive_name = os.path.join(target_date_path, f"backup-{date_stamp}_{time_stamp}")  # 加入時間戳
         if compress_format == "zip":
             shutil.make_archive(archive_name, 'zip', source)
         elif compress_format == "tar.gz":
