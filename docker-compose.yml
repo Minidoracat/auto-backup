@@ -10,10 +10,11 @@ services:
     environment:
       - SOURCE_DIRECTORY=/app/source
       - TARGET_DIRECTORY=/app/backup
-      - BACKUP_COUNT=5
+      - BACKUP_COUNT=5  # 備份數量(天數)
       - COMPRESS=true
+      - COMPRESS_FORMAT=zip  # "zip" 或 "tar.gz"
       - SCHEDULE_MODE=cron  # 或 'interval'
-      - CRON_HOUR=0
+      - CRON_HOUR=1
       - CRON_MINUTE=0
       - INTERVAL_HOURS=24  # 假設您使用間隔模式時的間隔小時數
       - INTERVAL_MINUTES=0  # 假設您使用間隔模式時的間隔分鐘數

@@ -4,6 +4,7 @@ import shutil
 import json
 import time
 from datetime import datetime
+import tarfile
 
 def load_config():
     # 優先從環境變量讀取配置
@@ -12,6 +13,7 @@ def load_config():
         "target_directory": os.getenv("TARGET_DIRECTORY"),
         "backup_count": os.getenv("BACKUP_COUNT"),
         "compress": os.getenv("COMPRESS", "false").lower() in ["true", "1", "t"],
+        "compress_format": os.getenv("COMPRESS_FORMAT", "zip"),  # 新增壓縮格式選項
         "schedule_mode": os.getenv("SCHEDULE_MODE", "interval"),  # 默認為間隔模式
         "cron_hour": os.getenv("CRON_HOUR", "0"),
         "cron_minute": os.getenv("CRON_MINUTE", "0"),
@@ -35,20 +37,27 @@ def load_config():
 
     return config
 
-def backup_files(source, target, compress):
+def backup_files(source, target, compress, compress_format):
     today = datetime.now().strftime("%Y-%m-%d")
     target_path = os.path.join(target, today)
-    if not os.path.exists(target_path):
-        os.makedirs(target_path, exist_ok=True)
     
-    # 將文件存儲在以日期命名的目錄中
-    for item in os.listdir(source):
-        s_item = os.path.join(source, item)
-        d_item = os.path.join(target_path, item)
-        if os.path.isdir(s_item):
-            shutil.copytree(s_item, d_item, dirs_exist_ok=True)
-        else:
-            shutil.copy2(s_item, d_item)
+    if compress:
+        archive_name = os.path.join(target, f"{today}")
+        if compress_format == "zip":
+            shutil.make_archive(archive_name, 'zip', source)
+        elif compress_format == "tar.gz":
+            with tarfile.open(f"{archive_name}.tar.gz", "w:gz") as tar:
+                tar.add(source, arcname=os.path.basename(source))
+    else:
+        if not os.path.exists(target_path):
+            os.makedirs(target_path, exist_ok=True)
+        for item in os.listdir(source):
+            s_item = os.path.join(source, item)
+            d_item = os.path.join(target_path, item)
+            if os.path.isdir(s_item):
+                shutil.copytree(s_item, d_item, dirs_exist_ok=True)
+            else:
+                shutil.copy2(s_item, d_item)
 
 def clean_old_backups(target, backup_count):
     all_backups = sorted([os.path.join(target, d) for d in os.listdir(target) if os.path.isdir(os.path.join(target, d))], key=os.path.getmtime)
