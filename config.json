@@ -1,12 +1,20 @@
 {
-    "source_directory": "/path/to/source",
-    "target_directory": "/path/to/backup",
-    "backup_count": 5,  // 備份數量(天數)
+    "source_directory": "/app/source",
+    "target_directory": "/app/backup",
+    "backup_count": 7,
     "compress": true,
-    "compress_format": "zip", // "zip" 或 "tar.gz"
-    "schedule_mode": "cron", // "cron" 或 "interval"
-    "cron_hour": 1,
-    "cron_minute": 0,
-    "interval_hours": 24,
-    "interval_minutes": 0
+    "compress_format": "tar.gz",
+    "schedule_mode": "cron",
+    "schedule": {
+        "cron": {
+            "minute": 0,
+            "second": 0
+        },
+        "interval": {
+            "days": 0,
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 10
+        }
+    }
 }

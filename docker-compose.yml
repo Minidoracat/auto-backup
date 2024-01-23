@@ -5,17 +5,9 @@ services:
     # build: .
     image: minidoracat/auto-backup:latest
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /path/to/source:/app/source
       - /path/to/backup:/app/backup
+      - ./config.json:/app/config.json
     environment:
       - TZ=Asia/Taipei # 時區
-      - SOURCE_DIRECTORY=/app/source
-      - TARGET_DIRECTORY=/app/backup
-      - BACKUP_COUNT=5  # 備份數量(天數)
-      - COMPRESS=true
-      - COMPRESS_FORMAT=zip  # "zip" 或 "tar.gz"
-      - SCHEDULE_MODE=cron  # 或 'interval'
-      - CRON_HOUR=1
-      - CRON_MINUTE=0
-      - INTERVAL_HOURS=24  # 假設您使用間隔模式時的間隔小時數
-      - INTERVAL_MINUTES=0  # 假設您使用間隔模式時的間隔分鐘數
