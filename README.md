@@ -2,23 +2,28 @@
 
 ## **專案描述**
 
-這是一個用於自動備份特定目錄檔案的 Python 專案。它支持定時備份、檔案壓縮以及透過 Docker Compose 進行容器化部署。
+這是一個用於自動備份多個指定目錄檔案的 Python 專案。支持定時備份、檔案壓縮及錯誤日誌記錄，並支持透過 Docker Compose 進行容器化部署。
 
 ## **配置說明**
 
-您可以通過編輯 **`config.json`** 檔案或設置環境變量來配置備份系統。配置選項包括：
+通過編輯 `config.json` 檔案或設置環境變量來配置備份系統。配置選項包括：
 
-- **`source_directory`**: 要備份的源目錄路徑。
+- **`source_directories`**: 要備份的源目錄路徑列表。
 - **`target_directory`**: 備份檔案存儲的目標目錄路徑。
+- **`log_directory`**: 日誌檔案存儲的目錄路徑。
+- **`log_count`**: 保留的日誌檔案數量。
 - **`backup_count`**: 保留的備份數量。超過此數量，最舊的備份將被刪除。
-- **`compress`**: 是否壓縮備份檔案。
-- **`compress_format`**: 壓縮格式，例如 "zip" 或 "tar.gz"。
+- **`compress`**: 是否壓縮備份檔案（僅支持 `tar.gz` 格式）。
 - **`schedule_mode`**: 排程模式，可選 "cron" 或 "interval"。
-- **`schedule`**: 根據選擇的 **`schedule_mode`**，設置具體的排程參數。
+- **`schedule`**: 根據選擇的 `schedule_mode`，設置具體的排程參數。
 
 ### **Cron 配置**
 
-- 使用 **`cron`** 模式時，您可以通過 `schedule_time` 以 "HH:MM" 格式指定具體的執行時間。例如，`"schedule_time": "01:00"` 將在每天的 01:00 執行備份。
+使用 `cron` 模式時，可以通過 `schedule_time` 以 "HH:MM" 格式指定多個具體的執行時間。例如：
+
+```json
+"schedule_time": ["01:00", "13:00", "18:00"]
+
 
 ### **Interval 配置**
 
@@ -58,11 +63,15 @@ services:
     image: minidoracat/auto-backup:latest
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /path/to/source:/app/source
+      - /path/to/source1:/app/source1
+      - /path/to/source2:/app/source2
       - /path/to/backup:/app/backup
+      - /path/to/log:/app/log
       - ./config.json:/app/config.json
     environment:
       - TZ=Asia/Taipei # 時區
+
+```
 
 
 ## **注意事項**
