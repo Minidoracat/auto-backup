@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    environment: My_Docker  # 指定環境名稱
     steps:
       - uses: actions/checkout@v2
 
