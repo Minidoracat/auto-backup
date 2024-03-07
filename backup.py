@@ -8,6 +8,8 @@ import time
 from datetime import datetime
 import tarfile
 
+# 定義全局變量用於存儲配置
+global_config = None
 
 def load_config():
     print("正在加載配置...")
@@ -15,6 +17,15 @@ def load_config():
         config = json.load(file)
     print(f"配置加載完成: {config}")
     return config
+
+def reload_config():
+    global global_config
+    global_config = load_config()
+    
+def parse_schedule_time(time_str):
+    """將時間字符串 "HH:MM" 解析為 cron 格式的小時和分鐘"""
+    time_parts = time_str.split(':')
+    return {"hour": time_parts[0], "minute": time_parts[1]}
 
 def backup_files(source, target, compress, compress_format):
     print("開始執行備份...")
@@ -34,7 +45,6 @@ def backup_files(source, target, compress, compress_format):
         elif compress_format == "zip":
             shutil.make_archive(archive_name, 'zip', source)
     else:
-        # 直接複製檔案
         shutil.copytree(source, archive_name, dirs_exist_ok=True)
     print("備份完成。")
 
@@ -49,21 +59,26 @@ def clean_old_backups(target, backup_count):
 
 def scheduled_backup():
     print("執行排程備份...")
-    config = load_config()
-    backup_files(config['source_directory'], config['target_directory'], config['compress'], config['compress_format'])
-    clean_old_backups(config['target_directory'], config['backup_count'])
+    reload_config()  # 重新加載配置以使用最新設定
+    backup_files(global_config['source_directory'], global_config['target_directory'], global_config['compress'], global_config['compress_format'])
+    clean_old_backups(global_config['target_directory'], global_config['backup_count'])
 
-    
 def main():
     print("主程序開始...")
-    config = load_config()
+    reload_config()  # 初始加載配置
     scheduler = BackgroundScheduler()
     
-    if config['schedule_mode'] == 'cron':
-        scheduler.add_job(scheduled_backup, CronTrigger(**config['schedule']['cron']))
-    elif config['schedule_mode'] == 'interval':
-        scheduler.add_job(scheduled_backup, IntervalTrigger(**config['schedule']['interval']))
-
+    if global_config['schedule_mode'] == 'cron':
+        schedule_time = parse_schedule_time(global_config['schedule']['cron']['schedule_time'])
+        scheduler.add_job(scheduled_backup, CronTrigger(hour=schedule_time['hour'], minute=schedule_time['minute']))
+    elif global_config['schedule_mode'] == 'interval':
+        scheduler.add_job(scheduled_backup, IntervalTrigger(
+            days=global_config['schedule']['interval']['days'],
+            hours=global_config['schedule']['interval']['hours'],
+            minutes=global_config['schedule']['interval']['minutes'],
+            seconds=global_config['schedule']['interval']['seconds']
+        ))
+    
     scheduler.start()
     
     scheduled_backup()  # 程式啟動時立即執行一次備份
