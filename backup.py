@@ -53,16 +53,18 @@ def backup_files():
     start_time = datetime.now()
     logging.info(f"開始執行備份... 時間: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    target_archive_path = os.path.join(global_config['target_directory'], f"backup_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}")
-
     if global_config['compress']:
         # 壓縮模式
-        archive_path = f"{target_archive_path}.tar.gz"
+        archive_path = f"{os.path.join(global_config['target_directory'], 'backup_' + start_time.strftime('%Y-%m-%d_%H-%M-%S'))}.tar.gz"
         tar_command = ['tar', '-czf', archive_path]
 
         for directory in global_config['source_directories']:
-            tar_command.extend(['-C', os.path.dirname(directory), os.path.basename(directory)])
-        
+            if os.path.isdir(directory):
+                # 為了保留目錄結構，將目錄的父路徑作為工作目錄
+                tar_command.extend(['-C', os.path.dirname(directory), os.path.basename(directory)])
+            else:
+                logging.warning(f"指定的目錄不存在: {directory}")
+
         try:
             subprocess.run(tar_command, check=True)
             logging.info(f"壓縮完成: {archive_path}")
@@ -70,24 +72,20 @@ def backup_files():
             logging.error(f"壓縮過程中出錯: {e}")
     else:
         # 直接複製模式
+        target_dir_path = os.path.join(global_config['target_directory'], 'backup_' + start_time.strftime('%Y-%m-%d_%H-%M-%S'))
+        os.makedirs(target_dir_path, exist_ok=True)
+
         for directory in global_config['source_directories']:
-            target_dir_path = os.path.join(target_archive_path, os.path.basename(directory))
-            try:
-                shutil.copytree(directory, target_dir_path)
-                logging.info(f"複製完成: {directory} 到 {target_dir_path}")
-            except Exception as e:
-                logging.error(f"複製過程中出錯: {directory} 到 {target_dir_path}, 錯誤: {e}")
+            if os.path.isdir(directory):
+                destination_path = os.path.join(target_dir_path, os.path.basename(directory))
+                shutil.copytree(directory, destination_path)
+                logging.info(f"複製完成: {directory} 到 {destination_path}")
+            else:
+                logging.warning(f"指定的目錄不存在: {directory}")
 
     end_time = datetime.now()
     duration = end_time - start_time
-
-    if global_config['compress']:
-        # 獲取壓縮檔大小
-        total_size = os.path.getsize(archive_path)
-        total_size_mb = total_size / (1024 * 1024)
-        logging.info(f"備份完成。壓縮檔大小: {total_size_mb:.2f} MB，耗時: {duration}")
-    else:
-        logging.info(f"備份完成。耗時: {duration}")
+    logging.info(f"備份完成。耗時: {duration}")
 
 
 def clean_old_backups(target, backup_count):
@@ -102,7 +100,7 @@ def clean_old_backups(target, backup_count):
 def scheduled_backup():
     logging.info("執行排程備份...")
     reload_config()  # 重新加載配置以使用最新設定
-    backup_files(global_config['source_directory'], global_config['target_directory'], global_config['compress'], global_config['compress_format'])
+    backup_files()  # 更新此函數以去除不再需要的參數
     clean_old_backups(global_config['target_directory'], global_config['backup_count'])
 
 def main():
