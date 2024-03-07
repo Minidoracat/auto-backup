@@ -72,11 +72,30 @@ def backup_files(source, target, compress, compress_format):
                         tar.add(os.path.join(root, file), arcname=os.path.relpath(os.path.join(root, file), source))
         elif compress_format == "zip":
             shutil.make_archive(archive_name, 'zip', source)
+            # 假設 zip 操作後 file_count 仍然為源目錄中的檔案總數
+            file_count += sum([len(files) for _, _, files in os.walk(source)])
     else:
-        shutil.copytree(source, archive_name, dirs_exist_ok=True)
+        # 直接複製檔案時的操作
+        for root, dirs, files in os.walk(source):
+            for file in files:
+                src_file_path = os.path.join(root, file)
+                dest_file_path = os.path.join(target_date_path, os.path.relpath(src_file_path, source))
+                os.makedirs(os.path.dirname(dest_file_path), exist_ok=True)
+                shutil.copy2(src_file_path, dest_file_path)
+                file_count += 1
+                
+    # 操作完成後計算壓縮或複製的目標檔案的總大小
+    if compress:
+        total_size = os.path.getsize(archive_path)
+    else:
+        total_size = sum(os.path.getsize(os.path.join(dirpath, filename)) for dirpath, dirnames, filenames in os.walk(target_date_path) for filename in filenames)
+
     end_time = datetime.now()
     duration = end_time - start_time
-    logging.info(f"備份完成。檔案數量: {file_count}，耗時: {duration}")
+    total_size_mb = total_size / (1024 * 1024)  # 將字節轉換為MB
+    
+    logging.info(f"備份完成。檔案數量: {file_count}，總大小: {total_size_mb:.2f} MB，耗時: {duration}")
+
 
 def clean_old_backups(target, backup_count):
     logging.info("開始清理舊的備份...")
