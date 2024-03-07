@@ -75,7 +75,8 @@ def backup_files():
 
     if global_config['compress']:
         archive_path = f"{os.path.join(target_date_path, 'backup_' + start_time.strftime('%Y-%m-%d_%H-%M-%S'))}.tar.gz"
-        tar_command = ['tar', '-czf', archive_path]
+        # 在 tar 命令中加入 --warning=no-file-changed 选项
+        tar_command = ['tar', '--warning=no-file-changed', '-czf', archive_path]
 
         for directory in global_config['source_directories']:
             if os.path.isdir(directory):
