@@ -59,39 +59,41 @@ def backup_files():
 
     logging.info(f"開始執行備份... 時間: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
+    total_files_count = 0  # 初始化檔案計數器
+
     if global_config['compress']:
-        # 壓縮模式
         archive_path = f"{os.path.join(target_date_path, 'backup_' + start_time.strftime('%Y-%m-%d_%H-%M-%S'))}.tar.gz"
         tar_command = ['tar', '-czf', archive_path]
 
         for directory in global_config['source_directories']:
             if os.path.isdir(directory):
-                # 為了保留目錄結構，將目錄的父路徑作為工作目錄
+                for root, dirs, files in os.walk(directory):
+                    total_files_count += len(files)  # 累計檔案數量
                 tar_command.extend(['-C', os.path.dirname(directory), os.path.basename(directory)])
             else:
                 logging.warning(f"指定的目錄不存在: {directory}")
 
         try:
             subprocess.run(tar_command, check=True)
-            logging.info(f"壓縮完成: {archive_path}")
+            file_size_bytes = os.path.getsize(archive_path)
+            file_size_mb = file_size_bytes / (1024*1024)
+            logging.info(f"壓縮完成: {archive_path}, 檔案數量: {total_files_count}, 大小: {file_size_mb:.2f} MB")
         except subprocess.CalledProcessError as e:
             logging.error(f"壓縮過程中出錯: {e}")
     else:
-        # 直接複製模式
-        target_dir_path = os.path.join(target_date_path, 'backup_' + start_time.strftime('%Y-%m-%d_%H-%M-%S'))
-        os.makedirs(target_dir_path, exist_ok=True)
-
         for directory in global_config['source_directories']:
             if os.path.isdir(directory):
-                destination_path = os.path.join(target_dir_path, os.path.basename(directory))
+                destination_path = os.path.join(target_date_path, os.path.basename(directory))
                 shutil.copytree(directory, destination_path)
+                for root, dirs, files in os.walk(directory):
+                    total_files_count += len(files)  # 累計檔案數量
                 logging.info(f"複製完成: {directory} 到 {destination_path}")
             else:
                 logging.warning(f"指定的目錄不存在: {directory}")
 
     end_time = datetime.now()
     duration = end_time - start_time
-    logging.info(f"備份完成。耗時: {duration}")
+    logging.info(f"備份完成。檔案數量: {total_files_count}, 耗時: {duration}")
 
 
 def clean_old_backups(target, backup_count):
