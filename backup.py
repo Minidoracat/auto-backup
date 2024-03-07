@@ -1,14 +1,13 @@
+import shutil
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 import os
-import shutil
 import json
-import time
 from datetime import datetime
-import tarfile
 import logging
 from logging.handlers import TimedRotatingFileHandler
+import subprocess
 
 # 初始化 logging
 def setup_logging(log_directory, log_count):
@@ -50,51 +49,45 @@ def parse_schedule_times(time_str_list):
     """將時間字符串列表 "HH:MM" 解析為多個 cron 格式的小時和分鐘"""
     return [{"hour": time_part.split(':')[0], "minute": time_part.split(':')[1]} for time_part in time_str_list]
 
-def backup_files(source, target, compress, compress_format):
+def backup_files():
     start_time = datetime.now()
     logging.info(f"開始執行備份... 時間: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-    
-    file_count = 0  # 初始化檔案計數器
-    date_stamp = start_time.strftime("%Y-%m-%d")
-    time_stamp = start_time.strftime("%H-%M-%S")
-    target_date_path = os.path.join(target, date_stamp)
-    os.makedirs(target_date_path, exist_ok=True)
 
-    archive_name = os.path.join(target_date_path, f"backup-{date_stamp}_{time_stamp}")
-    if compress:
-        archive_path = f"{archive_name}.{compress_format}"
-        logging.info(f"正在壓縮檔案至 {archive_path}")
-        if compress_format == "tar.gz":
-            with tarfile.open(f"{archive_path}", "w:gz") as tar:
-                for root, dirs, files in os.walk(source):
-                    for file in files:
-                        file_count += 1
-                        tar.add(os.path.join(root, file), arcname=os.path.relpath(os.path.join(root, file), source))
-        elif compress_format == "zip":
-            shutil.make_archive(archive_name, 'zip', source)
-            # 假設 zip 操作後 file_count 仍然為源目錄中的檔案總數
-            file_count += sum([len(files) for _, _, files in os.walk(source)])
+    target_archive_path = os.path.join(global_config['target_directory'], f"backup_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}")
+
+    if global_config['compress']:
+        # 壓縮模式
+        archive_path = f"{target_archive_path}.tar.gz"
+        tar_command = ['tar', '-czf', archive_path]
+
+        for directory in global_config['source_directories']:
+            tar_command.extend(['-C', os.path.dirname(directory), os.path.basename(directory)])
+        
+        try:
+            subprocess.run(tar_command, check=True)
+            logging.info(f"壓縮完成: {archive_path}")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"壓縮過程中出錯: {e}")
     else:
-        # 直接複製檔案時的操作
-        for root, dirs, files in os.walk(source):
-            for file in files:
-                src_file_path = os.path.join(root, file)
-                dest_file_path = os.path.join(target_date_path, os.path.relpath(src_file_path, source))
-                os.makedirs(os.path.dirname(dest_file_path), exist_ok=True)
-                shutil.copy2(src_file_path, dest_file_path)
-                file_count += 1
-                
-    # 操作完成後計算壓縮或複製的目標檔案的總大小
-    if compress:
-        total_size = os.path.getsize(archive_path)
-    else:
-        total_size = sum(os.path.getsize(os.path.join(dirpath, filename)) for dirpath, dirnames, filenames in os.walk(target_date_path) for filename in filenames)
+        # 直接複製模式
+        for directory in global_config['source_directories']:
+            target_dir_path = os.path.join(target_archive_path, os.path.basename(directory))
+            try:
+                shutil.copytree(directory, target_dir_path)
+                logging.info(f"複製完成: {directory} 到 {target_dir_path}")
+            except Exception as e:
+                logging.error(f"複製過程中出錯: {directory} 到 {target_dir_path}, 錯誤: {e}")
 
     end_time = datetime.now()
     duration = end_time - start_time
-    total_size_mb = total_size / (1024 * 1024)  # 將字節轉換為MB
-    
-    logging.info(f"備份完成。檔案數量: {file_count}，總大小: {total_size_mb:.2f} MB，耗時: {duration}")
+
+    if global_config['compress']:
+        # 獲取壓縮檔大小
+        total_size = os.path.getsize(archive_path)
+        total_size_mb = total_size / (1024 * 1024)
+        logging.info(f"備份完成。壓縮檔大小: {total_size_mb:.2f} MB，耗時: {duration}")
+    else:
+        logging.info(f"備份完成。耗時: {duration}")
 
 
 def clean_old_backups(target, backup_count):

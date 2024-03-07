@@ -1,5 +1,10 @@
 FROM python:3.9-slim
 
+# 更新包列表並安裝需要的工具
+RUN apt-get update && \
+    apt-get install -y tar gzip zip && \
+    rm -rf /var/lib/apt/lists/*
+
 # 設定工作目錄
 WORKDIR /app
 

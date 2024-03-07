@@ -6,7 +6,8 @@ services:
     image: minidoracat/auto-backup:latest
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /path/to/source:/app/source
+      - /path/to/source1:/app/source1
+      - /path/to/source2:/app/source2
       - /path/to/backup:/app/backup
       - /path/to/log:/app/log
       - ./config.json:/app/config.json

@@ -1,5 +1,5 @@
 {
-    "source_directory": "/app/source",
+    "source_directories": ["/app/source1", "/app/source2"],
     "target_directory": "/app/backup",
     "log_directory": "/app/logs",
     "log_count": 15,
