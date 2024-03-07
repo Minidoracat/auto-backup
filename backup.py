@@ -20,6 +20,8 @@ def setup_logging(log_directory, log_count):
     # 根據當天日期建立日誌檔案名稱
     today = datetime.now().strftime("%Y-%m-%d")
     log_file_path = os.path.join(log_directory, f"{today}.log")
+    error_log_file_path = os.path.join(log_directory, f"{today}_error.log")  # 新增错误日志文件路径
+    
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     
@@ -27,10 +29,15 @@ def setup_logging(log_directory, log_count):
     file_handler = TimedRotatingFileHandler(log_file_path, when="D", interval=1, backupCount=log_count, utc=True)
     file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     
+    error_file_handler = TimedRotatingFileHandler(error_log_file_path, when="D", interval=1, backupCount=log_count, utc=True)  # 新增错误日志文件处理器
+    error_file_handler.setLevel(logging.ERROR)  # 只记录ERROR级别的日志
+    error_file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(logging.Formatter('%(message)s'))
     
     logger.addHandler(file_handler)
+    logger.addHandler(error_file_handler)  # 将错误日志处理器添加到logger
     logger.addHandler(stream_handler)
 
 

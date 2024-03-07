@@ -5,7 +5,7 @@
     "log_count": 15,
     "backup_count": 7,
     "compress": true,
-    "compress_format": "tar.gz",
+    // "compress_format": "tar.gz",
     "schedule_mode": "cron",
     "schedule": {
         "cron": {
