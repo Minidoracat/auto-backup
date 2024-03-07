@@ -113,6 +113,8 @@ def main():
     
     scheduler.start()
     
+    scheduled_backup()  # 程序啟動時立即執行一次備份
+    
     try:
         while True:
             time.sleep(1)
