@@ -53,11 +53,15 @@ def parse_schedule_times(time_str_list):
 
 def backup_files():
     start_time = datetime.now()
+    date_stamp = start_time.strftime('%Y-%m-%d')
+    target_date_path = os.path.join(global_config['target_directory'], date_stamp)
+    os.makedirs(target_date_path, exist_ok=True)
+
     logging.info(f"開始執行備份... 時間: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
     if global_config['compress']:
         # 壓縮模式
-        archive_path = f"{os.path.join(global_config['target_directory'], 'backup_' + start_time.strftime('%Y-%m-%d_%H-%M-%S'))}.tar.gz"
+        archive_path = f"{os.path.join(target_date_path, 'backup_' + start_time.strftime('%Y-%m-%d_%H-%M-%S'))}.tar.gz"
         tar_command = ['tar', '-czf', archive_path]
 
         for directory in global_config['source_directories']:
@@ -74,7 +78,7 @@ def backup_files():
             logging.error(f"壓縮過程中出錯: {e}")
     else:
         # 直接複製模式
-        target_dir_path = os.path.join(global_config['target_directory'], 'backup_' + start_time.strftime('%Y-%m-%d_%H-%M-%S'))
+        target_dir_path = os.path.join(target_date_path, 'backup_' + start_time.strftime('%Y-%m-%d_%H-%M-%S'))
         os.makedirs(target_dir_path, exist_ok=True)
 
         for directory in global_config['source_directories']:
@@ -92,11 +96,15 @@ def backup_files():
 
 def clean_old_backups(target, backup_count):
     logging.info("開始清理舊的備份...")
-    all_backups = sorted([d for d in os.listdir(target) if os.path.isdir(os.path.join(target, d))], key=lambda d: os.path.getmtime(os.path.join(target, d)))
-    while len(all_backups) > backup_count:
-        old_backup = all_backups.pop(0)
+    all_backup_dates = [d for d in os.listdir(target) if os.path.isdir(os.path.join(target, d))]
+    all_backup_dates.sort()
+
+    # 保留最新的 backup_count 個備份
+    while len(all_backup_dates) > backup_count:
+        old_backup = all_backup_dates.pop(0)
         shutil.rmtree(os.path.join(target, old_backup))
         logging.info(f"已刪除舊備份：{old_backup}")
+
     logging.info("舊備份清理完成。")
 
 def scheduled_backup():
