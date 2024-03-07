@@ -15,20 +15,22 @@ def setup_logging(log_directory, log_count):
     if not os.path.exists(log_directory):
         os.makedirs(log_directory)
     
-    log_file_path = os.path.join(log_directory, "backup.log")
+    # 根據當天日期建立日誌檔案名稱
+    today = datetime.now().strftime("%Y-%m-%d")
+    log_file_path = os.path.join(log_directory, f"{today}.log")
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     
-    # 輸出到文件，每天滾動一次，保留 log_count 天的日誌
-    file_handler = TimedRotatingFileHandler(log_file_path, when="midnight", backupCount=log_count)
+    # 修改 TimedRotatingFileHandler 設定，使其每天根據日期分開日誌檔案
+    file_handler = TimedRotatingFileHandler(log_file_path, when="D", interval=1, backupCount=log_count, utc=True)
     file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     
-    # 輸出到終端
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(logging.Formatter('%(message)s'))
     
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
+
 
 # 定義全局變量用於存儲配置
 global_config = None
@@ -49,10 +51,12 @@ def parse_schedule_times(time_str_list):
     return [{"hour": time_part.split(':')[0], "minute": time_part.split(':')[1]} for time_part in time_str_list]
 
 def backup_files(source, target, compress, compress_format):
-    logging.info("開始執行備份...")
-    now = datetime.now()
-    date_stamp = now.strftime("%Y-%m-%d")
-    time_stamp = now.strftime("%H-%M-%S")
+    start_time = datetime.now()
+    logging.info(f"開始執行備份... 時間: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    file_count = 0  # 初始化檔案計數器
+    date_stamp = start_time.strftime("%Y-%m-%d")
+    time_stamp = start_time.strftime("%H-%M-%S")
     target_date_path = os.path.join(target, date_stamp)
     os.makedirs(target_date_path, exist_ok=True)
 
@@ -62,12 +66,17 @@ def backup_files(source, target, compress, compress_format):
         logging.info(f"正在壓縮檔案至 {archive_path}")
         if compress_format == "tar.gz":
             with tarfile.open(f"{archive_path}", "w:gz") as tar:
-                tar.add(source, arcname=os.path.basename(source))
+                for root, dirs, files in os.walk(source):
+                    for file in files:
+                        file_count += 1
+                        tar.add(os.path.join(root, file), arcname=os.path.relpath(os.path.join(root, file), source))
         elif compress_format == "zip":
             shutil.make_archive(archive_name, 'zip', source)
     else:
         shutil.copytree(source, archive_name, dirs_exist_ok=True)
-    logging.info("備份完成。")
+    end_time = datetime.now()
+    duration = end_time - start_time
+    logging.info(f"備份完成。檔案數量: {file_count}，耗時: {duration}")
 
 def clean_old_backups(target, backup_count):
     logging.info("開始清理舊的備份...")
