@@ -1,13 +1,15 @@
 {
     "source_directory": "/app/source",
     "target_directory": "/app/backup",
+    "log_directory": "/app/logs",
+    "log_count": 15,
     "backup_count": 7,
     "compress": true,
     "compress_format": "tar.gz",
     "schedule_mode": "cron",
     "schedule": {
         "cron": {
-            "schedule_time": "01:00"
+            "schedule_time": ["01:00", "13:00", "18:00"]
         },
         "interval": {
             "days": 0,

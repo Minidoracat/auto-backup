@@ -8,6 +8,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /path/to/source:/app/source
       - /path/to/backup:/app/backup
+      - /path/to/log:/app/log
       - ./config.json:/app/config.json
     environment:
       - TZ=Asia/Taipei # 時區
