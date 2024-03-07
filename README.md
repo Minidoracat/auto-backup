@@ -18,12 +18,7 @@
 
 ### **Cron 配置**
 
-- 使用 **`cron`** 模式，您可以指定任務執行的具體時間。例如：
-    - **`hour`**: 小時（0-23）
-    - **`minute`**: 分鐘（0-59）
-    - **`second`**: 秒（0-59）
-    - 設置為 **`{"hour": 0, "minute": 0, "second": 0}`** 將在每天午夜執行備份。
-    - 設置為 **`{"minute": 0, "second":0} `** 將在每小時的整點執行備份。
+- 使用 **`cron`** 模式時，您可以通過 `schedule_time` 以 "HH:MM" 格式指定具體的執行時間。例如，`"schedule_time": "01:00"` 將在每天的 01:00 執行備份。
 
 ### **Interval 配置**
 
@@ -32,7 +27,7 @@
     - **`hours`**: 小時數間隔
     - **`minutes`**: 分鐘數間隔
     - **`seconds`**: 秒數間隔
-    - 設置為 **`{"days": 1}`** 將每天執行一次備份。
+    - 例如，設置為 **`{"hours": 1}`** 將每小時執行一次備份。
 
 ## **使用方法**
 
@@ -55,19 +50,20 @@
 您可以在 **`docker-compose.yml`** 文件中設置以下選項：
 
 ```yaml
-yamlCopy code
 version: '3.8'
 services:
-  backup_service:
-    build: .
-    environment:
-      - TZ=Asia/Shanghai
+  auto_backup:
+    #  for testing 
+    # build: .
+    image: minidoracat/auto-backup:latest
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /path/to/source:/app/source
       - /path/to/backup:/app/backup
-      - ./config.json:/app/config.json:ro
+      - ./config.json:/app/config.json
+    environment:
+      - TZ=Asia/Taipei # 時區
 
-```
 
 ## **注意事項**
 
