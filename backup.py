@@ -138,12 +138,13 @@ def main():
     scheduler = BackgroundScheduler()
 
     if global_config['schedule_mode'] == 'cron':
-        schedule_times = parse_schedule_times(global_config['schedule']['cron']['schedule_time'])
-        for schedule_time in schedule_times:
-            scheduler.add_job(scheduled_backup, CronTrigger(hour=schedule_time['hour'], minute=schedule_time['minute']))
+        for schedule_time in global_config['schedule']['cron']['schedule_time']:
+            hour, minute = schedule_time.split(':')
+            scheduler.add_job(scheduled_backup, CronTrigger(hour=hour, minute=minute))
     elif global_config['schedule_mode'] == 'interval':
-        scheduler.add_job(scheduled_backup, IntervalTrigger(days=global_config['schedule']['interval']['days'], hours=global_config['schedule']['interval']['hours'], minutes=global_config['schedule']['interval']['minutes'], seconds=global_config['schedule']['interval']['seconds']))
-    
+        interval_settings = global_config['schedule']['interval']
+        scheduler.add_job(scheduled_backup, IntervalTrigger(days=interval_settings['days'], hours=interval_settings['hours'], minutes=interval_settings['minutes'], seconds=interval_settings['seconds']))
+
     scheduler.start()
     
     scheduled_backup()  # 程序啟動時立即執行一次備份
